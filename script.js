@@ -133,6 +133,19 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('scroll', updateActiveNavigation, { passive: true });
   updateActiveNavigation(); // Initial run
 
+  function scrollToSection(targetElement) {
+    if (!targetElement) return;
+    const navBarHeight = 70;
+    const browserBarHeight = window.innerWidth <= 768 ? 0 : 38;
+    const totalHeaderHeight = navBarHeight + browserBarHeight;
+    const targetTop = targetElement.getBoundingClientRect().top + window.pageYOffset - totalHeaderHeight;
+
+    window.scrollTo({
+      top: Math.max(0, Math.round(targetTop)),
+      behavior: 'smooth'
+    });
+  }
+
   // --- Side Indicator Dots Click Handler ---
   indicatorDots.forEach(dot => {
     dot.addEventListener('click', (e) => {
@@ -140,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const targetId = dot.getAttribute('data-target');
       const targetEl = document.getElementById(targetId);
       if (targetEl) {
-        targetEl.scrollIntoView({ behavior: 'smooth' });
+        scrollToSection(targetEl);
       }
     });
   });
@@ -154,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const targetElement = document.querySelector(href);
       if (targetElement) {
         e.preventDefault();
-        targetElement.scrollIntoView({ behavior: 'smooth' });
+        scrollToSection(targetElement);
 
         // Close mobile menu if open
         if (navMenu.classList.contains('open')) {
@@ -418,14 +431,68 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // Simulate sending
+      // Send via EmailJS (Connected to Fachri's Gmail)
+      const EMAILJS_SERVICE_ID = 'service_m8vnpsp';
+      const EMAILJS_TEMPLATE_ID = 'template_77tj1lc';
+      const EMAILJS_PUBLIC_KEY = '58atw6yL_0tVve19T';
+
       btnSubmitMessage.disabled = true;
       btnSubmitMessage.innerHTML = '<span>Mengirim...</span>';
 
-      setTimeout(() => {
+      const isEmailJsReady = typeof emailjs !== 'undefined';
+
+      if (isEmailJsReady) {
+        emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+          name: name,
+          from_name: name,
+          email: email,
+          from_email: email,
+          message: message,
+          title: `Pesan Portofolio dari ${name}`
+        }, EMAILJS_PUBLIC_KEY)
+        .then(() => {
+          btnSubmitMessage.disabled = false;
+          btnSubmitMessage.innerHTML = `
+            <span>${currentLang === 'id' ? 'kirim pesan' : 'send message'}</span>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          `;
+          formFeedback.className = 'form-feedback-message success';
+          formFeedback.textContent = currentLang === 'id' 
+            ? `Terima kasih, ${name}! Pesan Anda telah terkirim langsung ke email Fachri.`
+            : `Thank you, ${name}! Your message has been sent directly to Fachri's email.`;
+          contactForm.reset();
+          showToast(currentLang === 'id' ? 'Pesan berhasil terkirim ke Gmail! ✉️' : 'Message sent to Gmail! ✉️', '✓', 4500);
+          setTimeout(() => {
+            formFeedback.className = 'form-feedback-message';
+            formFeedback.textContent = '';
+          }, 7000);
+        })
+        .catch((err) => {
+          console.error('EmailJS Error:', err);
+          btnSubmitMessage.disabled = false;
+          btnSubmitMessage.innerHTML = `
+            <span>${currentLang === 'id' ? 'kirim pesan' : 'send message'}</span>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          `;
+          formFeedback.className = 'form-feedback-message error';
+          formFeedback.textContent = currentLang === 'id'
+            ? 'Gagal mengirim pesan melalui server email. Silakan coba lagi atau hubungi via WhatsApp.'
+            : 'Failed to send message via email server. Please try again or reach out via WhatsApp.';
+        });
+      } else {
+        // Fallback langsung menggunakan mailto jika Public Key EmailJS belum diisi
+        const mailtoUrl = `mailto:yumandaf@gmail.com?subject=${encodeURIComponent('Pesan Portofolio dari ' + name)}&body=${encodeURIComponent('Nama: ' + name + '\nEmail: ' + email + '\n\nPesan:\n' + message)}`;
+        window.open(mailtoUrl, '_blank');
+
         btnSubmitMessage.disabled = false;
         btnSubmitMessage.innerHTML = `
-          <span>submit</span>
+          <span>${currentLang === 'id' ? 'kirim pesan' : 'send message'}</span>
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <line x1="22" y1="2" x2="11" y2="13"></line>
             <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
@@ -433,18 +500,18 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         formFeedback.className = 'form-feedback-message success';
-        formFeedback.textContent = `Terima kasih, ${name}! Pesan Anda telah berhasil terkirim. Fachri akan segera merespons ke ${email}.`;
+        formFeedback.textContent = currentLang === 'id'
+          ? `Membuka aplikasi email... Silakan klik 'Send' untuk mengirimkan pesan ke Fachri.`
+          : `Opening email client... Please click 'Send' to forward your message to Fachri.`;
 
         contactForm.reset();
-        showToast('Pesan berhasil dikirim ke Fachri!', '✓', 4500);
+        showToast(currentLang === 'id' ? 'Aplikasi email dibuka!' : 'Email client opened!', '✓', 4500);
 
-        // Auto clear success message after 7 seconds
         setTimeout(() => {
           formFeedback.className = 'form-feedback-message';
           formFeedback.textContent = '';
         }, 7000);
-
-      }, 1000);
+      }
     });
   }
 
@@ -688,9 +755,419 @@ document.addEventListener('DOMContentLoaded', () => {
       if (card.href && (card.href.startsWith('mailto:') || card.href.startsWith('http'))) return;
       e.preventDefault();
       navigator.clipboard.writeText(text).then(() => {
-        showToast(`Disalin: ${text}`, '📋', 2800);
+        showToast(currentLang === 'id' ? `Disalin: ${text}` : `Copied: ${text}`, '📋', 2800);
       }).catch(() => { });
     });
   });
+
+  // ===================================================================
+  // 11. MULTI-LANGUAGE SYSTEM (ID <-> EN)
+  // ===================================================================
+  const i18nDict = {
+    id: {
+      'nav.home': 'HOME',
+      'nav.tentang': 'TENTANG',
+      'nav.keahlian': 'KEAHLIAN',
+      'nav.project': 'PROJECT',
+      'nav.contact': 'CONTACT',
+      'nav.unduhCv': 'unduh cv',
+      'hero.greeting': 'Halo, Saya Fachri 👋',
+      'hero.badge': 'Teknik Informatika (D-IV)',
+      'hero.desc': 'Fresh graduate D-IV Teknik Informatika dari Politeknik Negeri Lhokseumawe dengan pengalaman dalam pengembangan aplikasi web dan mobile menggunakan Python (Flask), PHP, dan Flutter, integrasi database relasional, pemetaan Web GIS, serta pengalaman magang di PT PLN (Persero).',
+      'hero.btnContact': 'HUBUNGI SAYA',
+      'hero.btnDownloadCv': 'UNDUH CV (PDF)',
+      'hero.btnPreviewCv': 'PREVIEW CV',
+      'stat.ipk': 'IPK Kelulusan',
+      'stat.projects': 'Project Selesai',
+      'stat.intern': 'Pengalaman Magang',
+      'tentang.title': 'TENTANG SAYA',
+      'tentang.p1': 'Halo! Saya Fachri Yumanda Putra, lulusan Sarjana Terapan (D-IV) Teknik Informatika dari Politeknik Negeri Lhokseumawe dengan IPK 3.57/4.00. Saya berfokus pada pengembangan perangkat lunak berbasis web dan mobile, perancangan arsitektur backend, serta solusi data spasial (GIS).',
+      'tentang.p2': 'Memiliki rekam jejak dalam merancang sistem cerdas untuk kebutuhan nyata, mulai dari Tugas Akhir Sistem Deteksi Titik Rawan Kecelakaan dengan Spatial Clustering DBSCAN hingga aplikasi inspeksi lapangan berbasis Flutter di PT PLN (Persero) UP3 Lhokseumawe.',
+      'tentang.p3': 'Saya siap memberikan kontribusi maksimal dan terus berkembang dalam lingkungan kerja profesional, baik sebagai Web Developer, Mobile Developer, maupun Software Engineer.',
+      'tentang.hl1Title': 'Pendidikan',
+      'tentang.hl1Desc': 'D-IV Teknik Informatika (IPK 3.57)',
+      'tentang.hl2Title': 'Pengalaman',
+      'tentang.hl2Desc': 'IT & Logistics Intern di PT PLN',
+      'tentang.hl3Title': 'Spesialisasi',
+      'tentang.hl3Desc': 'Python (Flask), Flutter & Web GIS',
+      'tentang.hl4Title': 'Domisili',
+      'tentang.hl4Desc': 'Kuta Makmur, Aceh, Indonesia',
+      'keahlian.title': 'KEAHLIAN',
+      'keahlian.sub': 'Keahlian teknis rekayasa perangkat lunak, framework, basis data, dan enterprise tools yang saya terapkan dalam project web, mobile, dan sistem industri.',
+      'project.title': 'PROJECT',
+      'project.sub': 'Karya dan project rekayasa perangkat lunak terpilih yang merefleksikan keahlian saya dalam web, mobile, dan sistem informasi.',
+      'project.btn': 'LIHAT DETAIL PROJECT',
+      'project.p1Badge': 'Skripsi • Web GIS DSS',
+      'project.p1Title': 'Sistem Deteksi Titik Rawan Kecelakaan',
+      'project.p1Desc': 'Web GIS Decision Support System untuk pemetaan dan deteksi titik rawan kecelakaan lalu lintas menggunakan metode DBSCAN spatial clustering, jarak Haversine, dan pembobotan AEK (Angka Ekuivalensi Kecelakaan).',
+      'project.p2Badge': 'PT PLN (Persero) UP3',
+      'project.p2Title': 'Mobile Monitoring Inspeksi Tier 2',
+      'project.p2Desc': 'Aplikasi mobile inspeksi Tier 2 berbasis Flutter yang terintegrasi real-time dengan Google Sheets & Apps Script untuk mendukung pencatatan, verifikasi, dan pemantauan data inspeksi lapangan PT PLN (Persero).',
+      'contact.title': 'CONTACT',
+      'contact.sub': 'Pilih saluran komunikasi favorit Anda atau kirimkan pesan langsung melalui form di bawah.',
+      'contact.formTitle': 'KIRIM PESAN',
+      'contact.name': 'NAME',
+      'contact.namePh': 'Masukkan nama Anda',
+      'contact.email': 'EMAIL ADDRESS',
+      'contact.emailPh': 'alamat@email.com',
+      'contact.msg': 'PESAN',
+      'contact.msgPh': 'Tuliskan pesan atau ajakan kolaborasi di sini...',
+      'contact.submit': 'kirim pesan'
+    },
+    en: {
+      'nav.home': 'HOME',
+      'nav.tentang': 'ABOUT',
+      'nav.keahlian': 'SKILLS',
+      'nav.project': 'PROJECTS',
+      'nav.contact': 'CONTACT',
+      'nav.unduhCv': 'download cv',
+      'hero.greeting': 'Hello, I am Fachri 👋',
+      'hero.badge': 'Informatics Engineering (B.App.Sc)',
+      'hero.desc': 'Fresh graduate in Informatics Engineering from Politeknik Negeri Lhokseumawe with hands-on experience in web and mobile app development with Python (Flask), PHP, Flutter, relational databases, Web GIS mapping, and industrial internship at PT PLN (Persero).',
+      'hero.btnContact': 'GET IN TOUCH',
+      'hero.btnDownloadCv': 'DOWNLOAD CV (PDF)',
+      'hero.btnPreviewCv': 'PREVIEW CV',
+      'stat.ipk': 'Graduation GPA',
+      'stat.projects': 'Completed Projects',
+      'stat.intern': 'Internship Experience',
+      'tentang.title': 'ABOUT ME',
+      'tentang.p1': 'Hello! I am Fachri Yumanda Putra, an Informatics Engineering graduate (B.App.Sc) from Politeknik Negeri Lhokseumawe with a GPA of 3.57/4.00. My focus centers on web & mobile software development, backend engineering, and spatial data solutions (GIS).',
+      'tentang.p2': 'Proven track record of engineering intelligent systems for real-world scenarios—from an Accident Blackspot Detection Decision Support System using DBSCAN clustering to a real-time mobile inspection app with Flutter at PT PLN (Persero).',
+      'tentang.p3': 'Ready to make a positive impact and grow further in collaborative tech environments as a Web Developer, Mobile Developer, or Software Engineer.',
+      'tentang.hl1Title': 'Education',
+      'tentang.hl1Desc': 'B.App.Sc in Informatics Eng. (GPA 3.57)',
+      'tentang.hl2Title': 'Experience',
+      'tentang.hl2Desc': 'IT & Logistics Intern at PT PLN',
+      'tentang.hl3Title': 'Specialization',
+      'tentang.hl3Desc': 'Python (Flask), Flutter & Web GIS',
+      'tentang.hl4Title': 'Location',
+      'tentang.hl4Desc': 'Kuta Makmur, Aceh, Indonesia',
+      'keahlian.title': 'SKILLS',
+      'keahlian.sub': 'Technical proficiencies in software engineering, frameworks, database architectures, and enterprise systems applied across industry solutions.',
+      'project.title': 'PROJECTS',
+      'project.sub': 'Selected software engineering works reflecting my capabilities across web, mobile, and intelligent data systems.',
+      'project.btn': 'VIEW PROJECT DETAILS',
+      'project.p1Badge': 'Thesis • Web GIS DSS',
+      'project.p1Title': 'Traffic Accident Blackspot Detection System',
+      'project.p1Desc': 'Web GIS Decision Support System for mapping and detecting traffic accident blackspots using spatial clustering DBSCAN, Haversine formula, and AEK weighting.',
+      'project.p2Badge': 'PT PLN (Persero) UP3',
+      'project.p2Title': 'Tier 2 Inspection Mobile Monitoring',
+      'project.p2Desc': 'Flutter-based Tier 2 mobile inspection app seamlessly connected in real-time to Google Sheets & Apps Script for field equipment audits at PT PLN (Persero).',
+      'contact.title': 'CONTACT',
+      'contact.sub': 'Connect with me through your favorite channels or send a direct message via the form below.',
+      'contact.formTitle': 'SEND MESSAGE',
+      'contact.name': 'NAME',
+      'contact.namePh': 'Enter your full name',
+      'contact.email': 'EMAIL ADDRESS',
+      'contact.emailPh': 'yourname@email.com',
+      'contact.msg': 'MESSAGE',
+      'contact.msgPh': 'Write your thoughts or project collaboration inquiry here...',
+      'contact.submit': 'send message'
+    }
+  };
+
+  let currentLang = localStorage.getItem('porto_lang') || 'id';
+
+  function applyLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem('porto_lang', lang);
+
+    const langBtn = document.getElementById('langLabel');
+    if (langBtn) langBtn.textContent = lang.toUpperCase();
+
+    // Nav
+    const navH = document.querySelector('#nav-home span'); if (navH) navH.textContent = i18nDict[lang]['nav.home'];
+    const navT = document.querySelector('#nav-tentang span'); if (navT) navT.textContent = i18nDict[lang]['nav.tentang'];
+    const navK = document.querySelector('#nav-keahlian span'); if (navK) navK.textContent = i18nDict[lang]['nav.keahlian'];
+    const navP = document.querySelector('#nav-project span'); if (navP) navP.textContent = i18nDict[lang]['nav.project'];
+    const navC = document.querySelector('#nav-contact span'); if (navC) navC.textContent = i18nDict[lang]['nav.contact'];
+
+    // Hero
+    const heroGreet = document.querySelector('.hero-greeting'); if (heroGreet) heroGreet.textContent = i18nDict[lang]['hero.greeting'];
+    const heroRole = document.querySelector('.role-badge'); if (heroRole) heroRole.textContent = i18nDict[lang]['hero.badge'];
+    const heroDesc = document.querySelector('.hero-description'); if (heroDesc) heroDesc.textContent = i18nDict[lang]['hero.desc'];
+    const heroContactBtn = document.querySelector('#btnHeroContact span'); if (heroContactBtn) heroContactBtn.textContent = i18nDict[lang]['hero.btnContact'];
+    const heroCvBtn = document.querySelector('#btnHeroDownloadCv span'); if (heroCvBtn) heroCvBtn.textContent = i18nDict[lang]['hero.btnDownloadCv'];
+    const heroPrevBtn = document.querySelector('#btnHeroViewCv span'); if (heroPrevBtn) heroPrevBtn.textContent = i18nDict[lang]['hero.btnPreviewCv'];
+
+    // Stats
+    const statLabels = document.querySelectorAll('.stat-item .stat-label');
+    if (statLabels[0]) statLabels[0].textContent = i18nDict[lang]['stat.ipk'];
+    if (statLabels[1]) statLabels[1].textContent = i18nDict[lang]['stat.projects'];
+    if (statLabels[2]) statLabels[2].textContent = i18nDict[lang]['stat.intern'];
+
+    // Tentang
+    const tentTitle = document.querySelector('.section-tentang .section-title'); if (tentTitle) tentTitle.textContent = i18nDict[lang]['tentang.title'];
+    const tentParas = document.querySelectorAll('.tentang-text-box p');
+    if (tentParas[0]) tentParas[0].textContent = i18nDict[lang]['tentang.p1'];
+    if (tentParas[1]) tentParas[1].textContent = i18nDict[lang]['tentang.p2'];
+    if (tentParas[2]) tentParas[2].textContent = i18nDict[lang]['tentang.p3'];
+
+    // Tentang Highlights Cards
+    const hlItems = document.querySelectorAll('.tentang-highlights-grid .highlight-item');
+    if (hlItems.length >= 4) {
+      const h1 = hlItems[0].querySelector('h3'); if (h1) h1.textContent = i18nDict[lang]['tentang.hl1Title'];
+      const p1 = hlItems[0].querySelector('p'); if (p1) p1.textContent = i18nDict[lang]['tentang.hl1Desc'];
+
+      const h2 = hlItems[1].querySelector('h3'); if (h2) h2.textContent = i18nDict[lang]['tentang.hl2Title'];
+      const p2 = hlItems[1].querySelector('p'); if (p2) p2.textContent = i18nDict[lang]['tentang.hl2Desc'];
+
+      const h3 = hlItems[2].querySelector('h3'); if (h3) h3.textContent = i18nDict[lang]['tentang.hl3Title'];
+      const p3 = hlItems[2].querySelector('p'); if (p3) p3.textContent = i18nDict[lang]['tentang.hl3Desc'];
+
+      const h4 = hlItems[3].querySelector('h3'); if (h4) h4.textContent = i18nDict[lang]['tentang.hl4Title'];
+      const p4 = hlItems[3].querySelector('p'); if (p4) p4.textContent = i18nDict[lang]['tentang.hl4Desc'];
+    }
+
+    // Keahlian
+    const keahTitle = document.querySelector('.keahlian-big-title'); if (keahTitle) keahTitle.textContent = i18nDict[lang]['keahlian.title'];
+    const keahSub = document.querySelector('.keahlian-subtitle'); if (keahSub) keahSub.textContent = i18nDict[lang]['keahlian.sub'];
+
+    // Project Section & Cards
+    const projTitle = document.querySelector('.section-project .section-title'); if (projTitle) projTitle.textContent = i18nDict[lang]['project.title'];
+    const projSub = document.querySelector('.section-project .section-subtitle-text'); if (projSub) projSub.textContent = i18nDict[lang]['project.sub'];
+    document.querySelectorAll('.btn-lihat-project span').forEach(el => el.textContent = i18nDict[lang]['project.btn']);
+
+    const projCards = document.querySelectorAll('.project-showcase-card');
+    if (projCards.length >= 2) {
+      // Project 1
+      const p1Badge = projCards[0].querySelector('.project-badge-tag'); if (p1Badge) p1Badge.textContent = i18nDict[lang]['project.p1Badge'];
+      const p1Title = projCards[0].querySelector('.project-card-title'); if (p1Title) p1Title.textContent = i18nDict[lang]['project.p1Title'];
+      const p1Desc = projCards[0].querySelector('.project-card-summary'); if (p1Desc) p1Desc.textContent = i18nDict[lang]['project.p1Desc'];
+
+      // Project 2
+      const p2Badge = projCards[1].querySelector('.project-badge-tag'); if (p2Badge) p2Badge.textContent = i18nDict[lang]['project.p2Badge'];
+      const p2Title = projCards[1].querySelector('.project-card-title'); if (p2Title) p2Title.textContent = i18nDict[lang]['project.p2Title'];
+      const p2Desc = projCards[1].querySelector('.project-card-summary'); if (p2Desc) p2Desc.textContent = i18nDict[lang]['project.p2Desc'];
+    }
+
+    // Contact
+    const contTitle = document.querySelector('.section-contact .section-title'); if (contTitle) contTitle.textContent = i18nDict[lang]['contact.title'];
+    const contSub = document.querySelector('.section-contact .section-subtitle-text'); if (contSub) contSub.textContent = i18nDict[lang]['contact.sub'];
+    const contFormTitle = document.querySelector('.form-title'); if (contFormTitle) contFormTitle.textContent = i18nDict[lang]['contact.formTitle'];
+    
+    const inpName = document.getElementById('inputName'); if (inpName) inpName.placeholder = i18nDict[lang]['contact.namePh'];
+    const inpEmail = document.getElementById('inputEmail'); if (inpEmail) inpEmail.placeholder = i18nDict[lang]['contact.emailPh'];
+    const inpMsg = document.getElementById('inputPesan'); if (inpMsg) inpMsg.placeholder = i18nDict[lang]['contact.msgPh'];
+    const submitBtn = document.querySelector('#btnSubmitMessage span'); if (submitBtn) submitBtn.textContent = i18nDict[lang]['contact.submit'];
+  }
+
+  const langSwitchBtn = document.getElementById('langSwitchBtn');
+  if (langSwitchBtn) {
+    langSwitchBtn.addEventListener('click', () => {
+      const nextLang = currentLang === 'id' ? 'en' : 'id';
+      applyLanguage(nextLang);
+      showToast(nextLang === 'id' ? 'Bahasa: Indonesia' : 'Language: English', '🌐', 2000);
+    });
+  }
+  applyLanguage(currentLang);
+
+  // ===================================================================
+  // 12. THEME SWITCHER (Light, Dark, Cyber, Aurora)
+  // ===================================================================
+  const themes = ['light', 'dark', 'cyber', 'aurora'];
+  const themeMeta = {
+    light:  { name: 'Light', icon: '☀️' },
+    dark:   { name: 'Dark', icon: '🌙' },
+    cyber:  { name: 'Cyber', icon: '⚡' },
+    aurora: { name: 'Aurora', icon: '🌌' }
+  };
+
+  let currentTheme = localStorage.getItem('porto_theme') || 'light';
+
+  function applyTheme(theme) {
+    if (!themes.includes(theme)) theme = 'light';
+    currentTheme = theme;
+    localStorage.setItem('porto_theme', theme);
+
+    if (theme === 'light') {
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+
+    const tIcon = document.getElementById('themeIcon');
+    const tLabel = document.getElementById('themeLabel');
+    if (tIcon) tIcon.textContent = themeMeta[theme].icon;
+    if (tLabel) tLabel.textContent = themeMeta[theme].name;
+
+    // Reset dan ganti jenis partikel background interaktif
+    initInteractiveBackground(theme);
+  }
+
+  const themeToggleBtn = document.getElementById('themeToggleBtn');
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+      const nextIdx = (themes.indexOf(currentTheme) + 1) % themes.length;
+      const nextTheme = themes[nextIdx];
+      applyTheme(nextTheme);
+      showToast(`Tema: ${themeMeta[nextTheme].name}`, themeMeta[nextTheme].icon, 2200);
+    });
+  }
+
+  // ===================================================================
+  // 13. DYNAMIC INTERACTIVE THEME-SPECIFIC BACKGROUND ANIMATION
+  // ===================================================================
+  const bgCanvas = document.getElementById('bg-canvas');
+  let bgCtx = null;
+  let bgParticles = [];
+  let bgAnimFrameId = null;
+
+  if (bgCanvas) {
+    bgCtx = bgCanvas.getContext('2d');
+    function resizeCanvas() {
+      bgCanvas.width = window.innerWidth;
+      bgCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+  }
+
+  function initInteractiveBackground(theme) {
+    if (!bgCanvas || !bgCtx) return;
+    if (bgAnimFrameId) cancelAnimationFrame(bgAnimFrameId);
+    bgParticles = [];
+
+    const w = bgCanvas.width;
+    const h = bgCanvas.height;
+
+    if (theme === 'light') {
+      // Light Theme: Floating modern geometric glow bubbles with smooth interactive movement
+      const count = Math.min(Math.floor(w * 0.028), 45);
+      for (let i = 0; i < count; i++) {
+        bgParticles.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          r: Math.random() * 26 + 10,
+          dx: (Math.random() - 0.5) * 0.7,
+          dy: (Math.random() - 0.5) * 0.7,
+          color: Math.random() > 0.4 ? 'rgba(24, 24, 27, 0.075)' : 'rgba(99, 102, 241, 0.09)'
+        });
+      }
+    } else if (theme === 'dark') {
+      // Dark Theme: Constellation / Neural Network Connected Grid
+      const count = Math.min(Math.floor(w * 0.045), 65);
+      for (let i = 0; i < count; i++) {
+        bgParticles.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          r: Math.random() * 2.8 + 1.2,
+          dx: (Math.random() - 0.5) * 0.75,
+          dy: (Math.random() - 0.5) * 0.75,
+          color: 'rgba(251, 251, 254, 0.75)'
+        });
+      }
+    } else if (theme === 'cyber') {
+      // Cyber Theme: Digital Matrix Cyber Rain / Digital Pillars
+      const count = Math.min(Math.floor(w * 0.06), 85);
+      for (let i = 0; i < count; i++) {
+        bgParticles.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          len: Math.random() * 34 + 16,
+          speed: Math.random() * 3.2 + 1.4,
+          color: `rgba(16, 185, 129, ${Math.random() * 0.65 + 0.3})`
+        });
+      }
+    } else if (theme === 'aurora') {
+      // Aurora Theme: Flowing dreamy starlight drifting nebula particles
+      const count = Math.min(Math.floor(w * 0.045), 60);
+      for (let i = 0; i < count; i++) {
+        bgParticles.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          r: Math.random() * 4.5 + 1.8,
+          dx: (Math.random() - 0.5) * 0.65,
+          dy: (Math.random() - 0.5) * 0.65,
+          pulse: Math.random() * Math.PI,
+          color: Math.random() > 0.5 ? 'rgba(129, 140, 248, 0.7)' : 'rgba(236, 72, 153, 0.55)'
+        });
+      }
+    }
+
+    function renderBg() {
+      bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+
+      if (theme === 'light') {
+        bgParticles.forEach(p => {
+          p.x += p.dx;
+          p.y += p.dy;
+          if (p.x < -p.r) p.x = bgCanvas.width + p.r;
+          if (p.x > bgCanvas.width + p.r) p.x = -p.r;
+          if (p.y < -p.r) p.y = bgCanvas.height + p.r;
+          if (p.y > bgCanvas.height + p.r) p.y = -p.r;
+
+          bgCtx.beginPath();
+          bgCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          bgCtx.fillStyle = p.color;
+          bgCtx.fill();
+        });
+      } else if (theme === 'dark') {
+        // Draw constellation lines
+        for (let i = 0; i < bgParticles.length; i++) {
+          const p1 = bgParticles[i];
+          p1.x += p1.dx;
+          p1.y += p1.dy;
+          if (p1.x < 0 || p1.x > bgCanvas.width) p1.dx *= -1;
+          if (p1.y < 0 || p1.y > bgCanvas.height) p1.dy *= -1;
+
+          bgCtx.beginPath();
+          bgCtx.arc(p1.x, p1.y, p1.r, 0, Math.PI * 2);
+          bgCtx.fillStyle = p1.color;
+          bgCtx.fill();
+
+          for (let j = i + 1; j < bgParticles.length; j++) {
+            const p2 = bgParticles[j];
+            const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+            if (dist < 130) {
+              bgCtx.strokeStyle = `rgba(251, 251, 254, ${0.28 * (1 - dist / 130)})`;
+              bgCtx.lineWidth = 1;
+              bgCtx.beginPath();
+              bgCtx.moveTo(p1.x, p1.y);
+              bgCtx.lineTo(p2.x, p2.y);
+              bgCtx.stroke();
+            }
+          }
+        }
+      } else if (theme === 'cyber') {
+        bgParticles.forEach(p => {
+          p.y += p.speed;
+          if (p.y > bgCanvas.height + p.len) {
+            p.y = -p.len;
+            p.x = Math.random() * bgCanvas.width;
+          }
+          bgCtx.strokeStyle = p.color;
+          bgCtx.lineWidth = 1.4;
+          bgCtx.beginPath();
+          bgCtx.moveTo(p.x, p.y);
+          bgCtx.lineTo(p.x, p.y + p.len);
+          bgCtx.stroke();
+        });
+      } else if (theme === 'aurora') {
+        bgParticles.forEach(p => {
+          p.pulse += 0.02;
+          p.x += p.dx;
+          p.y += p.dy;
+          if (p.x < 0 || p.x > bgCanvas.width) p.dx *= -1;
+          if (p.y < 0 || p.y > bgCanvas.height) p.dy *= -1;
+
+          const dynamicR = p.r + Math.sin(p.pulse) * 1.2;
+          bgCtx.beginPath();
+          bgCtx.arc(p.x, p.y, Math.max(dynamicR, 0.5), 0, Math.PI * 2);
+          bgCtx.fillStyle = p.color;
+          bgCtx.shadowBlur = 12;
+          bgCtx.shadowColor = 'rgba(99, 102, 241, 0.45)';
+          bgCtx.fill();
+          bgCtx.shadowBlur = 0;
+        });
+      }
+
+      bgAnimFrameId = requestAnimationFrame(renderBg);
+    }
+    renderBg();
+  }
+
+  // Aktifkan tema saat awal load
+  applyTheme(currentTheme);
 
 });
