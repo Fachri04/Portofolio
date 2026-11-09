@@ -2140,10 +2140,16 @@ body.cursor-hover #cursor-dot {
   }
   :root {
     --browser-bar-height: 0px;
+    --navbar-height: 62px;
   }
   
+  /* Navbar */
+  .navbar-wrapper {
+    top: 0;
+  }
   .navbar-container {
-    padding: 0 1.2rem;
+    padding: 0 1rem;
+    height: var(--navbar-height);
   }
   
   .mobile-toggle {
@@ -2160,22 +2166,28 @@ body.cursor-hover #cursor-dot {
     flex-direction: column;
     padding: 1rem;
     border-radius: 0 0 16px 16px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
     display: none;
+    gap: 6px;
   }
   .nav-menu.open {
     display: flex;
   }
   
   .nav-tab {
-    padding: 10px;
+    padding: 12px 14px;
     justify-content: center;
-    border-radius: 8px;
+    border-radius: 10px;
+    font-size: 0.95rem;
   }
   
   .nav-action {
     display: flex;
-    gap: 8px;
+    gap: 6px;
+  }
+  .nav-action .ctrl-pill-btn {
+    padding: 5px 10px;
+    font-size: 0.78rem;
   }
   .nav-action .btn-unduh-cv {
     display: none;
@@ -2184,36 +2196,148 @@ body.cursor-hover #cursor-dot {
   .page-indicators {
     display: none;
   }
-  
-  .hero-title {
-    font-size: 2.4rem;
+
+  /* Padding Sections */
+  .page-section {
+    padding: calc(var(--navbar-height) + 1.2rem) 1.2rem 2.5rem;
+    min-height: auto;
   }
+  .page-section.section-tentang,
+  .page-section.section-keahlian,
+  .page-section.section-project,
+  .page-section.section-contact {
+    padding-top: calc(var(--navbar-height) + 1rem);
+  }
+  
+  /* Typography */
+  .hero-title {
+    font-size: 2.1rem;
+    line-height: 1.15;
+  }
+  .hero-description {
+    font-size: 0.95rem;
+    text-align: center;
+  }
+  .hero-action-row {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.8rem;
+  }
+  .hero-action-row .btn-contact-me {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 18px;
+    box-sizing: border-box;
+  }
+  .social-icons-group {
+    justify-content: center;
+    margin-top: 0.4rem;
+  }
+  .showcase-card-frame {
+    max-width: 100%;
+  }
+
   .section-title {
+    font-size: 1.8rem;
+  }
+  .section-subtitle-text {
+    font-size: 0.92rem;
+    margin-bottom: 1.8rem;
+  }
+  .school-headline {
+    font-size: 0.95rem;
+  }
+
+  /* Stat Row di Tentang Saya */
+  .stat-row {
+    gap: 0.8rem;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    width: 100%;
+    max-width: 360px;
+    margin: 1.2rem auto 1.5rem;
+  }
+  .stat-sep {
+    display: none;
+  }
+  .stat-item {
+    background: var(--bg-surface);
+    border: 1px solid var(--surface-border);
+    border-radius: 12px;
+    padding: 10px;
+    box-shadow: var(--shadow-xs);
+  }
+  .stat-number {
+    font-size: 1.7rem;
+  }
+
+  /* Highlights Grid di Tentang Saya */
+  .tentang-highlights-grid {
+    grid-template-columns: 1fr;
+    gap: 0.9rem;
+  }
+  .highlight-item {
+    padding: 1.2rem;
+  }
+  
+  .keahlian-big-title {
     font-size: 2rem;
   }
-  .keahlian-big-title {
-    font-size: 2.5rem;
+  .keahlian-subtitle {
+    font-size: 0.92rem;
   }
   
+  /* Projects */
   .projects-grid {
     grid-template-columns: 1fr;
+    gap: 1.4rem;
   }
+  .project-info-content {
+    padding: 1.2rem;
+  }
+  .project-card-title {
+    font-size: 1.2rem;
+  }
+  
+  /* Contact Unified */
   .contact-unified-layout {
     grid-template-columns: 1fr;
-    gap: 1.8rem;
+    gap: 1.6rem;
   }
   .contact-cards-grid {
     grid-template-columns: 1fr;
+    gap: 0.8rem;
   }
+  .contact-method-card {
+    padding: 1rem 1.2rem;
+  }
+  
   .cv-sections-grid {
     grid-template-columns: 1fr;
   }
   
   .tentang-text-box {
-    padding: 1.5rem;
+    padding: 1.2rem;
+    font-size: 0.95rem;
   }
   .form-canva-card {
-    padding: 2rem 1.4rem;
+    padding: 1.5rem 1.2rem;
+  }
+  .form-title {
+    font-size: 1.2rem;
+  }
+
+  /* Footer */
+  .footer-inner {
+    flex-direction: column;
+    text-align: center;
+    gap: 1.2rem;
+  }
+  .footer-left {
+    align-items: center;
+  }
+  .footer-links-row {
+    justify-content: center;
   }
 }
 
